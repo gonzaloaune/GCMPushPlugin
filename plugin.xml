@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    id="cordova-plugin-gcmpushplugin"
+    version="1.0.0">
+
+  <name>GCMPushPlugin</name>
+	<author>Gonzalo Aune</author>
+
+	<description>
+		This plugin allows your application to receive push notifications on Android and iOS.
+    Android and iOS uses Google Cloud Messaging.
+	</description>
+
+	<license>MIT</license>
+
+	<js-module src="www/gpp.js" name="GCMPushPlugin">
+        <clobbers target="GcmPushPlugin" />
+	</js-module>
+
+	<engines>
+		<engine name="cordova" version=">=3.8.0" />
+	</engines>
+
+	<!-- android -->
+	<platform name="android">
+    
+    <!-- android:name="android.support.multidex.MultiDexApplication"  -->
+    <!-- compile "com.android.support:multidex:1.0.0" -->
+    <!-- android {
+        defaultConfig {
+            multiDexEnabled true
+        }
+    } -->
+    
+    <framework src="build-extras.gradle" custom="true" type="gradleReference" />
+
+		<config-file target="res/xml/config.xml" parent="/*">
+			<feature name="GCMPushPlugin" >
+				<param name="android-package" value="com.gonzaloaune.cordova.gcm.GCMPushPlugin"/>
+        <param name="onload" value="true" />
+			</feature>
+		</config-file>
+
+		<config-file target="AndroidManifest.xml" parent="/manifest">
+			<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+			<uses-permission android:name="android.permission.GET_ACCOUNTS" />
+			<uses-permission android:name="android.permission.WAKE_LOCK" />
+			<uses-permission android:name="android.permission.VIBRATE"/>
+			<uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+			<permission android:name="$PACKAGE_NAME.permission.C2D_MESSAGE" android:protectionLevel="signature" />
+			<uses-permission android:name="$PACKAGE_NAME.permission.C2D_MESSAGE" />
+		</config-file>
+
+		<config-file target="AndroidManifest.xml" parent="/manifest/application">
+      <activity android:name="com.gonzaloaune.cordova.gcm.GPPActivity" android:exported="true"/>
+			<receiver android:name="com.google.android.gms.gcm.GcmReceiver" android:permission="com.google.android.c2dm.permission.SEND" >
+				<intent-filter>
+					<action android:name="com.google.android.c2dm.intent.RECEIVE" />
+					<action android:name="com.google.android.c2dm.intent.REGISTRATION" />
+					<category android:name="$PACKAGE_NAME" />
+				</intent-filter>
+			</receiver>
+			<service android:name="com.gonzaloaune.cordova.gcm.GPPListenerService">
+        <intent-filter>
+					<action android:name="com.google.android.c2dm.intent.RECEIVE" />
+        </intent-filter>
+      </service>
+      <service android:name="com.gonzaloaune.cordova.gcm.GPPInstanceIDListenerService">
+        <intent-filter>
+					<action android:name="com.google.android.gms.iid.InstanceID" />
+        </intent-filter>
+      </service>
+      <service android:name="com.gonzaloaune.cordova.gcm.GPPRegistrationIntentService" android:exported="false">
+      </service>
+		</config-file>
+
+    <source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/GPPActivity.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />
+		<source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/GPPListenerService.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />
+		<source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/GPPInstanceIDListenerService.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />
+		<source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/GCMPushPlugin.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />
+    <source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/GPPRegistrationIntentService.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />    
+
+	</platform>
+
+	<!-- ios -->
+  <!--
+	<platform name="ios">
+
+		<config-file target="config.xml" parent="/*">
+			<feature name="PushPlugin">
+				<param name="ios-package" value="PushPlugin"/>
+			</feature>
+		</config-file>
+
+		<source-file src="src/ios/AppDelegate+notification.m" />
+		<source-file src="src/ios/PushPlugin.m" />
+
+		<header-file src="src/ios/AppDelegate+notification.h" />
+		<header-file src="src/ios/PushPlugin.h" />
+
+	</platform>
+  -->
+  
+</plugin>
