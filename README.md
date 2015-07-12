@@ -22,7 +22,7 @@ Assuming you have your Cordova application up and running:
 
 2) Put your configuration file inside an "android-proj/app" or "android-proj/mobile" folder as advice by Google.
 
-3) Download this project and run `cordova plugin add GCMPushPlugin` or `cordova plugin add cordova-plugin-gcmpushplugin`
+3) Run `cordova plugin add cordova-plugin-gcmpushplugin` to install the plugin
 
 ##<a name="usage"></a> Usage
 
