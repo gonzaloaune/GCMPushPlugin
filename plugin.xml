@@ -4,7 +4,7 @@
     id="cordova-plugin-gcmpushplugin"
     version="1.0.0">
 
-  <name>GCMPushPlugin</name>
+  <name>gcm-push-plugin</name>
 	<author>Gonzalo Aune</author>
 
 	<description>
