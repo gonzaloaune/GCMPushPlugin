@@ -14,15 +14,15 @@ var GcmPushPlugin = {
               );
     },
     
-    // unregister: function (successCB, errorCB, options) {
-    //     cordova.exec(
-    //             successCB,
-    //             errorCB,
-    //             "GCMPushPlugin",
-    //             "unregister",
-    //             [options]
-    //           );
-    // },
+    unregister: function (successCB, errorCB) {
+        cordova.exec(
+                successCB,
+                errorCB,
+                "GCMPushPlugin",
+                "unregister",
+                []
+              );
+    },
     // 
     // setApplicationIconBadgeNumber: function (successCB, errorCB, options) {
     //     cordova.exec(

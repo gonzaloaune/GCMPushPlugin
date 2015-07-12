@@ -11,6 +11,7 @@ import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.iid.InstanceID;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -20,6 +21,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+
 /**
  * Author: Gonzalo Aune gonzaloaune@gmail.com
  */
@@ -28,6 +31,7 @@ public class GCMPushPlugin extends CordovaPlugin {
     private final String TAG = "GCMPushPlugin";
 
     private static final String REGISTER_GCM = "register";
+    private static final String UNREGISTER_GCM = "unregister";
 
     public static final String JS_CALLBACK_KEY = "JS_CALLBACK";
     public static final String SENDER_ID_KEY = "SENDER_ID";
@@ -84,8 +88,9 @@ public class GCMPushPlugin extends CordovaPlugin {
                     public void run() {
                         SharedPreferences sharedPreferences =
                                 PreferenceManager.getDefaultSharedPreferences(cordova.getActivity());
-                        sharedPreferences.edit().putString(SENDER_ID_KEY, senderId).apply();
-                        sharedPreferences.edit().putString(JS_CALLBACK_KEY, jsCallback).apply();
+                        final SharedPreferences.Editor edit = sharedPreferences.edit();
+                        edit.putString(SENDER_ID_KEY, senderId)
+                            .putString(JS_CALLBACK_KEY, jsCallback).apply();
 
                         if (checkPlayServices()) {
                             // Start IntentService to register this application with GCM.
@@ -93,6 +98,15 @@ public class GCMPushPlugin extends CordovaPlugin {
                             intent.putExtra(SENDER_ID_KEY, senderId);
                             cordova.getActivity().startService(intent);
                         }
+                    }
+                });
+                return true;
+            } else if (UNREGISTER_GCM.equals(action)) {
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        deleteSharedPreferences();
+                        unregisterGCM();
                     }
                 });
                 return true;
@@ -105,6 +119,30 @@ public class GCMPushPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
+    }
+
+    private void unregisterGCM() {
+        InstanceID instanceID = InstanceID.getInstance(cordova.getActivity());
+        try {
+            instanceID.deleteInstanceID();
+            callback.success("Successfully unregistered from GCM");
+        } catch (IOException e) {
+            e.printStackTrace();
+            callback.error("Unable to unregister from GCM: " + e.getLocalizedMessage());
+        }
+    }
+
+    private void deleteSharedPreferences() {
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(cordova.getActivity());
+
+        final SharedPreferences.Editor edit = sharedPreferences.edit();
+        edit.remove(SENDER_ID_KEY)
+            .remove(JS_CALLBACK_KEY)
+            .remove(LAST_PUSH_KEY)
+            .remove(SENT_TOKEN_KEY)
+            .remove(REFRESH_TOKEN_KEY)
+            .remove(GCM_TOKEN_KEY).apply();
     }
 
     @Override
@@ -175,6 +213,7 @@ public class GCMPushPlugin extends CordovaPlugin {
                     callback.success(jsonObject);
                 } catch (JSONException e) {
                     e.printStackTrace();
+                    callback.error("Error while sending token");
                 }
             } else {
                 callback.error("Error while getting token");
