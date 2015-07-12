@@ -11,6 +11,7 @@ This plugin only works with the latest Cordova 5 release, it uses Gradle for And
 ### Contents
 - [Android Installation](#android-install)
 - [Usage](#usage)
+- [Changelog](#changelog)
 - [Upcomings](#upcomings)
 - [LICENSE](#license)
 
@@ -26,7 +27,9 @@ Assuming you have your Cordova application up and running:
 
 ##<a name="usage"></a> Usage
 
-For now the only available method is the `register` method which will register your Token with GCM. The way to call it is the following:
+### Registration
+
+The `register` method will register your Token with GCM. The way to call it is the following:
 
 ```js
 window.GcmPushPlugin.register(successHandler, errorHandler, {
@@ -66,9 +69,44 @@ function onNotification(notification) {
 }
 ```
 
+### Unregister
+
+The `unregister` method will unregister your Token from GCM. The way to call it is the following:
+
+```js
+window.GcmPushPlugin.unregister(unregisterSuccess, unregisterError);
+```
+
+The first parameter is the callback that will be fired once the unregistration is successful.
+```js
+function unregisterSuccess(result) {
+  console.log("Unregister success: " + result);
+}
+```
+The second parameter is the callback that will be fired if there was an error while unregistering.
+```js
+function unregisterError(error) {
+  console.log("Error: " + error);
+}
+```
+
+If everything goes well and you are able to unregister, you won't be able to send a push notification anymore getting a NotRegistered error from GCM:
+
+```
+curl --header "Authorization: key=SERVER_API_KEY" \
+       --header Content-Type:"application/json" \
+       https://gcm-http.googleapis.com/gcm/send \
+       -d "{ \"data\" : { \"title\" : \"MyCoolApp\", \"text\" : \"MessageText\", \"extra\":{\"url\":\"someurl.js\"}}, \"to\" : \"$DEVICE_TOKEN\" }"
+```
+`{"multicast_id":xxxxxxxxxxxxxxx,"success":0,"failure":1,"canonical_ids":0,"results":[{"error":"NotRegistered"}]}%`
+
+##<a name="changelog"></a> Changelog
+
+- 07/12/2015 Added **Unregister** method for Android
+
 ##<a name="upcomings"></a> Upcomings
 
-- **Unregister** method for Android
+- ~~**Unregister** method for Android~~
 - **Register** method for iOS
 - **Unregister** method for iOS
 - **setApplicationBadgeNumber** method for iOS
