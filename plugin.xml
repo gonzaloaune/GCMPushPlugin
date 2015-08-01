@@ -84,22 +84,21 @@
 	</platform>
 
 	<!-- ios -->
-  <!--
 	<platform name="ios">
 
 		<config-file target="config.xml" parent="/*">
-			<feature name="PushPlugin">
-				<param name="ios-package" value="PushPlugin"/>
+			<feature name="GCMPushPlugin">
+				<param name="ios-package" value="GCMPushPlugin"/>
+        <param name="onload" value="true" />
 			</feature>
 		</config-file>
 
-		<source-file src="src/ios/AppDelegate+notification.m" />
-		<source-file src="src/ios/PushPlugin.m" />
-
-		<header-file src="src/ios/AppDelegate+notification.h" />
-		<header-file src="src/ios/PushPlugin.h" />
+    <header-file src="src/ios/GCMPushPlugin.h" />
+    <header-file src="src/ios/AppDelegate+Notification.h" />
+    
+		<source-file src="src/ios/GCMPushPlugin.m" />
+		<source-file src="src/ios/AppDelegate+Notification.m" />
 
 	</platform>
-  -->
   
 </plugin>
