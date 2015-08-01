@@ -10,7 +10,9 @@ This plugin only works with the latest Cordova 5 release, it uses Gradle for And
 
 ### Contents
 - [Android Installation](#android-install)
-- [Usage](#usage)
+- [Android Usage](#usage)
+- [iOS Installation - Native](#ios-install-native)
+- [iOS Native Usage](#usage)
 - [Changelog](#changelog)
 - [Upcomings](#upcomings)
 - [LICENSE](#license)
@@ -100,13 +102,118 @@ curl --header "Authorization: key=SERVER_API_KEY" \
 ```
 `{"multicast_id":xxxxxxxxxxxxxxx,"success":0,"failure":1,"canonical_ids":0,"results":[{"error":"NotRegistered"}]}%`
 
+##<a name="ios-install-native"></a> iOS native installation
+
+Assuming you have your Cordova application up and running:
+
+1) Run `cordova plugin add cordova-plugin-gcmpushplugin` to install the plugin and proceed to [Usage Native iOS](#ios-native-usage)
+
+##<a name="ios-native-usage"></a> Usage
+
+### Registration
+
+The `register` method will attempt to register natively. The way to call it is the following:
+
+```js
+window.GcmPushPlugin.register(successHandler, errorHandler, {
+    "jsCallback":"onNotification"
+});
+```
+
+The first parameter is the callback that will be fired once the Token is generated, the token will come in a json where the key is `ios`.
+```js
+function successHandler(result) {
+  console.log("Token: " + result.ios);
+}
+```
+The second parameter is the callback that will be fired if there was an error while generating the Token.
+```js
+function errorHandler(error) {
+  console.log("Error: " + error);
+}
+```
+The third parameter is a hash of options, in this case we only need to pass the jsCallback that will be fired once we get our notification.
+
+If everything goes well and you are able to register, you should be able to send already push notifications. I personally use a ruby script for that (using houston lib):
+
+```ruby
+require 'houston'
+
+# Environment variables are automatically read, or can be overridden by any specified options. You can also
+# conveniently use `Houston::Client.development` or `Houston::Client.production`.
+APN = Houston::Client.development
+APN.certificate = File.read(PATH_TO_PEM)
+
+# An example of the token sent back when a device registers for notifications
+token = "TOKEN"
+
+# Create a notification that alerts a message to the user, plays a sound, and sets the badge on the app
+notification = Houston::Notification.new(device: token)
+notification.alert = "Hello, World!"
+
+# Notifications can also change the badge count, have a custom sound, have a category identifier, indicate available Newsstand content, or pass along arbitrary data.
+notification.badge = 57
+notification.sound = "default"
+notification.content_available = true
+notification.custom_data = {foo: "bar"}
+
+# And... sent! That's all it takes.
+APN.push(notification)
+```
+
+Then you will receive in your `onNotification` method the notification:
+
+```js
+function onNotification(notification) {
+  console.log("Event Received: " + e); // {"content-available":"1","alert":"Hello, World!","badge":"57","sound":"default","foo":"bar"}
+}
+```
+
+### Unregister
+
+The `unregister` method will unregister your device. The way to call it is the following:
+
+```js
+window.GcmPushPlugin.unregister(unregisterSuccess, unregisterError);
+```
+
+The first parameter is the callback that will be fired once the unregistration is successful.
+```js
+function unregisterSuccess(result) {
+  console.log("Unregister success: " + result);
+}
+```
+The second parameter is the callback that will be fired if there was an error while unregistering.
+```js
+function unregisterError(error) {
+  console.log("Error: " + error);
+}
+```
+
+If everything goes well and you are able to unregister, you won't be able to send a push notification anymore.
+
+### setApplicationIconBadgeNumber
+
+The `setApplicationIconBadgeNumber` method will set (as the name says) the application badge icon number to whatever you want. The way to call it is the following:
+
+```js
+window.GcmPushPlugin.unregister({'badge':12});
+```
+
+
 ##<a name="changelog"></a> Changelog
 
 - 07/12/2015 Added **Unregister** method for Android
+- 08/01/2015 Added **Register** method for iOS native
+- 08/01/2015 Added **Unregister** method for iOS native
+- 08/01/2015 Added **setApplicationBadgeNumber** method for iOS native
 
 ##<a name="upcomings"></a> Upcomings
 
 - ~~**Unregister** method for Android~~
+- ~~**Register** method for iOS native~~
+- ~~**Unregister** method for iOS native~~
+- ~~**setApplicationBadgeNumber** method for iOS native~~
 - **Register** method for iOS
 - **Unregister** method for iOS
 - **setApplicationBadgeNumber** method for iOS

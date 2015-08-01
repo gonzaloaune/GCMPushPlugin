@@ -44,8 +44,8 @@
     
     if (self.pushNotification) {
         //Debug callback
-        [[NSUserDefaults standardUserDefaults] setObject:@"alert" forKey:@"jsCallback"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
+//        [[NSUserDefaults standardUserDefaults] setObject:@"alert" forKey:@"jsCallback"];
+//        [[NSUserDefaults standardUserDefaults] synchronize];
         
         [[NSNotificationCenter defaultCenter] postNotificationName:@"GCMPushPluginRemoteNotification" object:self.pushNotification];
     }
@@ -56,7 +56,9 @@
     
 //    NSLog(@"Token: %@", token);
     
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:@{@"gcm": token}];
+    NSDictionary *tokenResponse = @{(self.usesGCM ? @"gcm" : @"ios"): token};
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:tokenResponse];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:self.registerCallbackId];
 }
 
