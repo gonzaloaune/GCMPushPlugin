@@ -1,5 +1,6 @@
 #import "GCMPushPlugin.h"
 #import <Cordova/CDV.h>
+#import <Google/CloudMessaging.h>
 
 @implementation GCMPushPlugin
 
@@ -52,20 +53,56 @@
 }
 
 - (void) didRegisterForRemoteNotifications:(NSNotification*)notification {
-    NSString* token = [notification object];
+    NSData* token = [notification object];
+    NSLog(@"Token: %@", token);
     
-//    NSLog(@"Token: %@", token);
-    
-    NSDictionary *tokenResponse = @{(self.usesGCM ? @"gcm" : @"ios"): token};
-    
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:tokenResponse];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.registerCallbackId];
+    if (self.usesGCM) {
+        NSError* configureError;
+        [[GGLContext sharedInstance] configureWithError:&configureError];
+        NSAssert(!configureError, @"Error configuring Google services: %@", configureError);
+        
+        [[GCMService sharedInstance] startWithConfig:[GCMConfig defaultConfig]];
+        
+        __weak __block GCMPushPlugin *weakSelf = self;
+        _registrationHandler = ^(NSString *registrationToken, NSError *error){
+            if (registrationToken != nil) {
+                NSLog(@"Registration Token: %@", registrationToken);
+                NSDictionary *tokenResponse = @{@"gcm": registrationToken};
+                
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:tokenResponse];
+                [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:weakSelf.registerCallbackId];
+            } else {
+                NSLog(@"Registration to GCM failed with error: %@", error.localizedDescription);
+                
+                NSString *errorMessage = [NSString stringWithFormat:@"Error while registering for remote notifications: %@", error.localizedDescription];
+                
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorMessage];
+                [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:weakSelf.registerCallbackId];
+            }
+        };
+        
+        [[GGLInstanceID sharedInstance] startWithConfig:[GGLInstanceIDConfig defaultConfig]];
+        
+        self.registrationOptions = @{kGGLInstanceIDRegisterAPNSOption:token,
+                                     kGGLInstanceIDAPNSServerTypeSandboxOption:@(self.gcmSandbox)};
+        
+        [[GGLInstanceID sharedInstance] tokenWithAuthorizedEntity:[[[GGLContext sharedInstance] configuration] gcmSenderID]
+                                                            scope:kGGLInstanceIDScopeGCM
+                                                          options:self.registrationOptions
+                                                          handler:_registrationHandler];
+    } else {
+        NSLog(@"Registering with native iOS hooks");
+        NSDictionary *tokenResponse = @{@"ios": token};
+        
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:tokenResponse];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.registerCallbackId];
+    }
 }
 
 - (void) didFailToRegisterForRemoteNotifications:(NSNotification*)notification {
     NSError *error = [notification object];
     
-    NSString *errorMessage = [NSString stringWithFormat:@"Error while registering for remote notifications: %@", error.description];
+    NSString *errorMessage = [NSString stringWithFormat:@"Error while registering for remote notifications: %@", error.localizedDescription];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorMessage];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:self.registerCallbackId];
@@ -79,12 +116,12 @@
 //        NSLog(@"Received notification: %@", pushNotification);
         
         NSMutableString *jsonStr = [NSMutableString stringWithString:@"{"];
-        
         [self parseDictionary:pushNotification intoJSON:jsonStr];
-        
         [jsonStr appendString:@"}"];
         
 //        NSLog(@"Msg: %@", jsonStr);
+        
+        if (self.usesGCM) [[GCMService sharedInstance] appDidReceiveMessage:pushNotification];
         
         NSString *js = [NSString stringWithFormat:@"%@(%@);", self.jsCallback, jsonStr];
         [self.commandDelegate evalJs:js];
@@ -103,14 +140,9 @@
         return;
     }
     self.jsCallback = jsCallback;
+    self.usesGCM = [options objectForKey:@"usesGCM"];
+    self.gcmSandbox = [options objectForKey:@"sandbox"];
     
-    NSString *senderId = [options objectForKey:@"senderId"];
-    if (senderId != nil) {
-        self.senderId = senderId;
-        self.usesGCM = YES;
-    }
-
-    [[NSUserDefaults standardUserDefaults] setObject:senderId forKey:@"senderId"];
     [[NSUserDefaults standardUserDefaults] setBool:self.usesGCM forKey:@"usesGCM"];
     [[NSUserDefaults standardUserDefaults] setObject:jsCallback forKey:@"jsCallback"];
     [[NSUserDefaults standardUserDefaults] synchronize];
@@ -120,33 +152,25 @@
     BOOL wantsAlert = [options objectForKey:@"alert"] != nil && [[options objectForKey:@"alert"] isEqualToString:@"true"];
     
     [self.commandDelegate runInBackground:^{
-        if (!self.usesGCM) {
-            NSLog(@"Registering with native iOS hooks");
+        //-- Set Notification
+        if ([[UIApplication sharedApplication] respondsToSelector:@selector(isRegisteredForRemoteNotifications)]) {
+            // iOS 8 Notifications
+            UIUserNotificationType UserNotificationTypes = UIUserNotificationTypeNone;
+            if (wantsBadge) UserNotificationTypes |= UIUserNotificationTypeBadge;
+            if (wantsSound) UserNotificationTypes |= UIUserNotificationTypeSound;
+            if (wantsAlert) UserNotificationTypes |= UIUserNotificationTypeAlert;
             
-            //-- Set Notification
-            if ([[UIApplication sharedApplication] respondsToSelector:@selector(isRegisteredForRemoteNotifications)]) {
-                // iOS 8 Notifications
-                UIUserNotificationType UserNotificationTypes = UIUserNotificationTypeNone;
-                if (wantsBadge) UserNotificationTypes |= UIUserNotificationTypeBadge;
-                if (wantsSound) UserNotificationTypes |= UIUserNotificationTypeSound;
-                if (wantsAlert) UserNotificationTypes |= UIUserNotificationTypeAlert;
-                
-                [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:UserNotificationTypes categories:nil]];
-                [[UIApplication sharedApplication] registerForRemoteNotifications];
-            } else {
-                // iOS < 8 Notifications
-                UIRemoteNotificationType notificationTypes = UIRemoteNotificationTypeNone;
-                if (wantsBadge) notificationTypes |= UIRemoteNotificationTypeBadge;
-                if (wantsSound) notificationTypes |= UIRemoteNotificationTypeSound;
-                if (wantsAlert) notificationTypes |= UIRemoteNotificationTypeAlert;
-                
-                [[UIApplication sharedApplication] registerForRemoteNotificationTypes:
-                 (UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeSound)];
-            }
+            [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:UserNotificationTypes categories:nil]];
+            [[UIApplication sharedApplication] registerForRemoteNotifications];
         } else {
-            NSLog(@"Registering with GCM implementation");
+            // iOS < 8 Notifications
+            UIRemoteNotificationType notificationTypes = UIRemoteNotificationTypeNone;
+            if (wantsBadge) notificationTypes |= UIRemoteNotificationTypeBadge;
+            if (wantsSound) notificationTypes |= UIRemoteNotificationTypeSound;
+            if (wantsAlert) notificationTypes |= UIRemoteNotificationTypeAlert;
             
-            
+            [[UIApplication sharedApplication] registerForRemoteNotificationTypes:
+             (UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeSound)];
         }
     }];
 }
@@ -167,6 +191,15 @@
     int badge = [[options objectForKey:@"badge"] intValue] ?: 0;
     
     [[UIApplication sharedApplication] setApplicationIconBadgeNumber:badge];
+}
+
+- (void)onTokenRefresh {
+    // A rotation of the registration tokens is happening, so the app needs to request a new token.
+    NSLog(@"The GCM registration token needs to be changed.");
+    [[GGLInstanceID sharedInstance] tokenWithAuthorizedEntity:[[[GGLContext sharedInstance] configuration] gcmSenderID]
+                                                        scope:kGGLInstanceIDScopeGCM
+                                                      options:self.registrationOptions
+                                                      handler:_registrationHandler];
 }
 
 -(void)parseDictionary:(NSDictionary *)inDictionary intoJSON:(NSMutableString *)jsonString {

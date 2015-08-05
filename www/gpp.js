@@ -5,7 +5,6 @@ var exec = require("cordova/exec");
 var GcmPushPlugin = {
 
     register: function (successCB, errorCB, options) {
-        alert('register!');
         cordova.exec(
                 successCB,
                 errorCB,
@@ -16,7 +15,6 @@ var GcmPushPlugin = {
     },
     
     unregister: function (successCB, errorCB) {
-        alert('unregister!');
         cordova.exec(
                 successCB,
                 errorCB,
@@ -27,7 +25,6 @@ var GcmPushPlugin = {
     },
     
     setApplicationIconBadgeNumber: function (options) {
-        alert('setApplicationIconBadgeNumber!');
         cordova.exec(
                 function(resp){},
                 function(resp){},
