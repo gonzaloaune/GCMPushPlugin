@@ -9,7 +9,7 @@
 
 	<description>
 		This plugin allows your application to receive push notifications on Android and iOS.
-    Android and iOS uses Google Cloud Messaging.
+    Android and iOS uses Google Cloud Messaging. iOS can also run natively.
 	</description>
 
 	<license>MIT</license>
