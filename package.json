@@ -1,11 +1,12 @@
 {
   "name": "cordova-plugin-gcmpushplugin",
-  "version": "1.1.0",
-  "description": "\n\t\tThis plugin allows your application to receive push notifications on Android and iOS.\n    Android and iOS uses Google Cloud Messaging.\n\t",
+  "version": "1.2.0",
+  "description": "\n\t\tThis plugin allows your application to receive push notifications on Android and iOS.\n    Android and iOS uses Google Cloud Messaging. iOS can also run natively.\n\t",
   "cordova": {
     "id": "cordova-plugin-gcmpushplugin",
     "platforms": [
-      "android"
+      "android",
+      "ios"
     ]
   },
   "repository": {
@@ -14,7 +15,8 @@
   },
   "keywords": [
     "ecosystem:cordova",
-    "cordova-android"
+    "cordova-android",
+    "cordova-ios"
   ],
   "engines": [
     {
