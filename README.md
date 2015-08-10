@@ -29,7 +29,21 @@ Assuming you have your Cordova application up and running:
 
 2) Put your configuration file inside an "android-proj/app" or "android-proj/mobile" folder as advice by Google.
 
-3) Run `cordova plugin add cordova-plugin-gcmpushplugin` to install the plugin
+3) Apply the Gradle configuration from this site https://developers.google.com/cloud-messaging/android/client The important lines are:
+```
+//Add the dependency to your project's top-level build.gradle:
+classpath 'com.google.gms:google-services:1.3.0-beta1'
+
+//Add the plugin to your app-level build.gradle:
+apply plugin: 'com.google.gms.google-services'
+
+//Set Up Google Play Services
+dependencies {
+  compile "com.google.android.gms:play-services:7.5.+"
+}
+```
+
+4) Run `cordova plugin add cordova-plugin-gcmpushplugin` to install the plugin
 
 ##<a name="usage"></a> Usage
 
