@@ -140,8 +140,8 @@
         return;
     }
     self.jsCallback = jsCallback;
-    self.usesGCM = [options objectForKey:@"usesGCM"];
-    self.gcmSandbox = [options objectForKey:@"sandbox"];
+    self.usesGCM = [[options objectForKey:@"usesGCM"] boolValue];
+    self.gcmSandbox = [[options objectForKey:@"sandbox"] boolValue];
     
     [[NSUserDefaults standardUserDefaults] setBool:self.usesGCM forKey:@"usesGCM"];
     [[NSUserDefaults standardUserDefaults] setObject:jsCallback forKey:@"jsCallback"];
