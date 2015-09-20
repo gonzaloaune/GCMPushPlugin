@@ -107,10 +107,17 @@ The `unregister` method will unregister your Token / RegistrationId from GCM. Th
 ```
 pushPlugin.unregister();
 ```
+
 #### Subscribe to a topic
 You may also subscribe to one ore more topics.
 ```
 pushPlugin.subscribeTopics(registrationId, ["topic1", "topic2"]);
+```
+
+#### Unsubscribe from a topic
+To unsubscribe use the following:
+```
+pushPlugin.unsubscribeTopics(["topic1", "topic2"]);
 ```
 
 #### Get cached data
