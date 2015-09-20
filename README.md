@@ -112,11 +112,15 @@ You may also subscribe to one ore more topics.
 ```
 pushPlugin.subscribeTopics(registrationId, ["topic1", "topic2"]);
 ```
-#### Unsubscribe from a topic
-To unsubscribe use the following.
+
+#### Get cached data
+When the app is in background mode and the `dataInBackground` is not set to true (which is the default), the plugin caches all incoming data.
+To get the cached data from the plugin you may use
 ```
-pushPlugin.unsubscribeTopics(["topic1", "topic2"]);
+pushPlugin.getCachedData();
 ```
+when the app resumes. The date will then be emitted with the `dataReceived` event.
+
 ##<a name="ios-install-gcm"></a> Notes on iOS
 This is a fork of [https://github.com/gonzaloaune/GCMPushPlugin](https://github.com/gonzaloaune/GCMPushPlugin)
 BTW: Thanks for the work to Gonzalo Aune! 
