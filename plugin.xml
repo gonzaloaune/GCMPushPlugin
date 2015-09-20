@@ -79,7 +79,8 @@
 		<source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/GPPListenerService.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />
 		<source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/GPPInstanceIDListenerService.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />
 		<source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/GCMPushPlugin.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />
-    <source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/GPPRegistrationIntentService.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />    
+		<source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/AsstetUtil.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />
+    <source-file src="src/android/com/gonzaloaune/cordova/plugin/gcm/GPPRegistrationIntentService.java" target-dir="src/com/gonzaloaune/cordova/gcm/" />
 
 	</platform>
 
