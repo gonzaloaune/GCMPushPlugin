@@ -15,9 +15,13 @@
 @property(nonatomic, strong) NSDictionary *pushNotification;
 @property(nonatomic, strong) NSDictionary *registrationOptions;
 @property(nonatomic, strong) void (^registrationHandler) (NSString *registrationToken, NSError *error);
+@property(nonatomic, weak) NSString* registrationToken;
 
 - (void)register:(CDVInvokedUrlCommand*)command;
 - (void)unregister:(CDVInvokedUrlCommand*)command;
 - (void)setApplicationIconBadgeNumber:(CDVInvokedUrlCommand*)command;
+
+-(void)subscribeToTopic:(CDVInvokedUrlCommand *)command;
+-(void)unsubscribeToTopic:(CDVInvokedUrlCommand *)command;
 
 @end

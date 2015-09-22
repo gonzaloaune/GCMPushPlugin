@@ -33,5 +33,22 @@ var GcmPushPlugin = {
                 [options]
               );
     },
+    subscribeToTopic : function(successCB,errorCB, topic){
+        cordova.exec(
+                function(resp){},
+                function(err){},
+                "GCMPushPlugin",
+                "subscribeToTopic",
+                [topic])
+    },
+    unsubscribeToTopic :function(successCB,errorCB, topic){
+        cordova.exec(
+                function(resp){},
+                function(err){},
+                "GCMPushPlugin",
+                "unsubscribeToTopic",
+                [topic]
+        )
+    }
 };
 module.exports = GcmPushPlugin;
