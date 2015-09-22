@@ -6,12 +6,12 @@
 
 - (CDVPlugin *)initWithWebView:(UIWebView *)theWebView {
     NSLog(@"initializing GCMPushPlugin");
-    
+
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(didRegisterForRemoteNotifications:)
                                                  name:CDVRemoteNotification
                                                object:nil];
-    
+
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(didFailToRegisterForRemoteNotifications:)
                                                  name:CDVRemoteNotificationError
@@ -25,6 +25,11 @@
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(applicationActive:)
                                                  name:UIApplicationDidBecomeActiveNotification
+                                               object:nil];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(applicationinActive:)
+                                                 name:UIApplicationWillTerminateNotification
                                                object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -42,12 +47,12 @@
 
 - (void)pageDidLoad:(NSNotification*)notification {
     self.pushNotification = [[NSUserDefaults standardUserDefaults] objectForKey:@"pushNotification"];
-    
+
     if (self.pushNotification) {
         //Debug callback
 //        [[NSUserDefaults standardUserDefaults] setObject:@"alert" forKey:@"jsCallback"];
 //        [[NSUserDefaults standardUserDefaults] synchronize];
-        
+
         [[NSNotificationCenter defaultCenter] postNotificationName:@"GCMPushPluginRemoteNotification" object:self.pushNotification];
     }
 }
@@ -55,37 +60,40 @@
 - (void) didRegisterForRemoteNotifications:(NSNotification*)notification {
     NSData* token = [notification object];
     NSLog(@"Token: %@", token);
-    
+
     if (self.usesGCM) {
         NSError* configureError;
         [[GGLContext sharedInstance] configureWithError:&configureError];
         NSAssert(!configureError, @"Error configuring Google services: %@", configureError);
-        
+
         [[GCMService sharedInstance] startWithConfig:[GCMConfig defaultConfig]];
-        
+        NSUserDefaults *userdefaults = [NSUserDefaults standardUserDefaults];
         __weak __block GCMPushPlugin *weakSelf = self;
         _registrationHandler = ^(NSString *registrationToken, NSError *error){
             if (registrationToken != nil) {
                 NSLog(@"Registration Token: %@", registrationToken);
                 NSDictionary *tokenResponse = @{@"gcm": registrationToken};
-                
+
+                [userdefaults setObject:registrationToken forKey:@"registrationToken"];
+                [userdefaults synchronize];
+
                 CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:tokenResponse];
                 [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:weakSelf.registerCallbackId];
             } else {
                 NSLog(@"Registration to GCM failed with error: %@", error.localizedDescription);
-                
+
                 NSString *errorMessage = [NSString stringWithFormat:@"Error while registering for remote notifications: %@", error.localizedDescription];
-                
+
                 CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorMessage];
                 [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:weakSelf.registerCallbackId];
             }
         };
-        
+
         [[GGLInstanceID sharedInstance] startWithConfig:[GGLInstanceIDConfig defaultConfig]];
-        
+
         self.registrationOptions = @{kGGLInstanceIDRegisterAPNSOption:token,
                                      kGGLInstanceIDAPNSServerTypeSandboxOption:@(self.gcmSandbox)};
-        
+
         [[GGLInstanceID sharedInstance] tokenWithAuthorizedEntity:[[[GGLContext sharedInstance] configuration] gcmSenderID]
                                                             scope:kGGLInstanceIDScopeGCM
                                                           options:self.registrationOptions
@@ -93,7 +101,7 @@
     } else {
         NSLog(@"Registering with native iOS hooks");
         NSDictionary *tokenResponse = @{@"ios": token};
-        
+
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:tokenResponse];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.registerCallbackId];
     }
@@ -101,30 +109,109 @@
 
 - (void) didFailToRegisterForRemoteNotifications:(NSNotification*)notification {
     NSError *error = [notification object];
-    
+
     NSString *errorMessage = [NSString stringWithFormat:@"Error while registering for remote notifications: %@", error.localizedDescription];
-    
+
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorMessage];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:self.registerCallbackId];
 }
 
 - (void) didReceiveRemoteNotification:(NSNotification*)notification {
     NSDictionary *pushNotification = [notification object];
-    
+
     self.jsCallback = [[NSUserDefaults standardUserDefaults] stringForKey:@"jsCallback"];
     if (pushNotification && self.jsCallback) {
 //        NSLog(@"Received notification: %@", pushNotification);
-        
+
         NSMutableString *jsonStr = [NSMutableString stringWithString:@"{"];
         [self parseDictionary:pushNotification intoJSON:jsonStr];
         [jsonStr appendString:@"}"];
-        
+
 //        NSLog(@"Msg: %@", jsonStr);
-        
-        if (self.usesGCM) [[GCMService sharedInstance] appDidReceiveMessage:pushNotification];
-        
+
+//        if (self.usesGCM) [[GCMService sharedInstance] appDidReceiveMessage:pushNotification];
+
         NSString *js = [NSString stringWithFormat:@"%@(%@);", self.jsCallback, jsonStr];
         [self.commandDelegate evalJs:js];
+    }
+}
+
+-(void)subscribeToTopic:(CDVInvokedUrlCommand *)command {
+
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+
+    if (command.arguments.count > 0) {
+
+        [[GCMPubSub sharedInstance] subscribeWithToken:[userDefaults objectForKey:@"registrationToken"]
+                                                 topic:[command.arguments firstObject]
+                                               options:nil
+                                               handler:^(NSError *error) {
+                                                   if (error) {
+                                                       // Treat the "already subscribed" error more gently
+                                                       if (error.code == 3001) {
+                                                           NSLog(@"Already subscribed to %@",
+                                                                 [command.arguments firstObject]);
+                                                       } else {
+                                                           NSLog(@"Subscription failed: %@",
+                                                                 error.localizedDescription);
+                                                       }
+                                                       NSString *responseString =@"subscriptionFailed";
+
+                                                       CDVPluginResult *pluginResult =
+                                                       [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:responseString];
+
+                                                       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                                                   } else {
+                                                       //                                                   self.subscribedToTopic = true;
+                                                       NSLog(@"Subscribed to %@", [command.arguments firstObject]);
+                                                       NSString *responseString =@"topicSubscribed";
+
+                                                       CDVPluginResult *pluginResult =
+                                                       [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:responseString];
+
+                                                       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                                                   }
+                                               }];
+    }
+}
+
+-(void)unsubscribeToTopic:(CDVInvokedUrlCommand *)command
+{
+    NSUserDefaults *defaults= [NSUserDefaults standardUserDefaults];
+
+    if (command.arguments.count > 0)
+    {
+        [[GCMPubSub sharedInstance] unsubscribeWithToken:[defaults objectForKey:@"registrationToken"]
+                                                   topic:[command.arguments firstObject]
+                                                 options:nil
+                                                 handler:^(NSError *error) {
+                                                     if (error) {
+                                                         // Treat the "already subscribed" error more gently
+                                                         if (error.code == 3001) {
+                                                             NSLog(@"Already unsubscribed to %@",
+                                                                   command.arguments.firstObject);
+                                                         } else {
+                                                             NSLog(@"UnSubscription failed: %@",
+                                                                   error.localizedDescription);
+                                                         }
+                                                         NSString *responseString =@"subscriptionFailed";
+
+                                                         CDVPluginResult *pluginResult =
+                                                         [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:responseString];
+
+                                                         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                                                     } else {
+                                                         //                                                         self.subscribedToTopic = true;
+                                                         NSLog(@"UnSubscribed to %@", [command.arguments firstObject]);
+
+                                                         NSString *responseString =@"topicUnsubscribed";
+
+                                                         CDVPluginResult *pluginResult =
+                                                         [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:responseString];
+                                                         
+                                                         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                                                     }
+                                                 }];
     }
 }
 
