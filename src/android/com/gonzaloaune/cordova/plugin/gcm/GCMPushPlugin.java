@@ -74,6 +74,7 @@ public class GCMPushPlugin extends CordovaPlugin {
     private static CordovaWebView cordovaWebView;
     private static boolean isAppInForeground = false;
     private static ArrayDeque<Bundle> messageCache = new ArrayDeque<Bundle>();
+    private String registrationId = null;
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -150,7 +151,7 @@ public class GCMPushPlugin extends CordovaPlugin {
                 cordova.getThreadPool().execute(new Runnable() {
                     @Override
                     public void run() {
-                        subcribeTopics(options.optString("registrationId"), options.optJSONArray("topics"));
+                        subcribeTopics(options.optJSONArray("topics"));
                     }
                 });
                 return true;
@@ -158,7 +159,7 @@ public class GCMPushPlugin extends CordovaPlugin {
                 cordova.getThreadPool().execute(new Runnable() {
                     @Override
                     public void run() {
-                        unsubcribeTopics(options.optString("registrationId"), options.optJSONArray("topics"));
+                        unsubcribeTopics(options.optJSONArray("topics"));
                     }
                 });
                 return true;
@@ -212,49 +213,56 @@ public class GCMPushPlugin extends CordovaPlugin {
     /**
      * Subscribe to any GCM topics of interest, as defined by the TOPICS constant.
      *
-     * @param registrationId GCM token
      * @throws IOException if unable to reach the GCM PubSub service
      */
-    private void subcribeTopics(String registrationId, JSONArray topics) {
+    private void subcribeTopics(JSONArray topics) {
         try {
-            GcmPubSub pubSub = GcmPubSub.getInstance(context);
-            Boolean error = false;
-            for (int i = 0; i < topics.length(); i++) {
-                try {
-                    String topic = topics.getString(i);
-                    pubSub.subscribe(registrationId, "/topics/" + topic, null);
-                    Log.i(TAG, "successfully subscribed to topic " + topic);
-                } catch (Exception e) {
-                    sendError("error subscribing to topic: " + e.getLocalizedMessage());
+            if(registrationId == null){
+                sendError("you need to call 'init()' before you can subscribe to topics");
+            }else {
+                GcmPubSub pubSub = GcmPubSub.getInstance(context);
+                Boolean error = false;
+                for (int i = 0; i < topics.length(); i++) {
+                    try {
+                        String topic = topics.getString(i);
+                        pubSub.subscribe(registrationId, "/topics/" + topic, null);
+                        Log.i(TAG, "successfully subscribed to topic " + topic);
+                    } catch (Exception e) {
+                        sendError("error subscribing to topic: " + e.getLocalizedMessage());
+                    }
                 }
-            }
 
-            if(!error){
-                sendNoResult();
+                if (!error) {
+                    sendNoResult();
+                }
             }
         } catch (IllegalArgumentException e) {
             sendError("error subscribing to topic: " + e.getLocalizedMessage());
         }
     }
 
-    private void unsubcribeTopics(String registrationId, JSONArray topics) {
+    private void unsubcribeTopics(JSONArray topics) {
          try {
-             GcmPubSub pubSub = GcmPubSub.getInstance(context);
-             Boolean error = false;
-             for (int i = 0; i < topics.length(); i++) {
-                 try {
-                     String topic = topics.getString(i);
-                     pubSub.unsubscribe(registrationId, "/topics/" + topic);
-                     Log.i(TAG, "successfully unsubscribed from topic " + topic);
-                 } catch (Exception e) {
-                     sendError("error unsubscribing from topic: " + e.getLocalizedMessage());
-                     error = true;
-                     break;
+             if(registrationId == null){
+                sendError("you need to call 'init()' before you can unsubsribe from topics");
+             }else {
+                 GcmPubSub pubSub = GcmPubSub.getInstance(context);
+                 Boolean error = false;
+                 for (int i = 0; i < topics.length(); i++) {
+                     try {
+                         String topic = topics.getString(i);
+                         pubSub.unsubscribe(registrationId, "/topics/" + topic);
+                         Log.i(TAG, "successfully unsubscribed from topic " + topic);
+                     } catch (Exception e) {
+                         sendError("error unsubscribing from topic: " + e.getLocalizedMessage());
+                         error = true;
+                         break;
+                     }
                  }
-             }
 
-             if(!error){
-                 sendNoResult();
+                 if (!error) {
+                     sendNoResult();
+                 }
              }
         } catch (IllegalArgumentException e) {
             sendError("error unsubscribing from topic: " + e.getLocalizedMessage());
@@ -426,10 +434,11 @@ public class GCMPushPlugin extends CordovaPlugin {
             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
             boolean sentToken = sharedPreferences.getBoolean(SENT_TOKEN_KEY, false);
             boolean shouldRefreshToken = sharedPreferences.getBoolean(REFRESH_TOKEN_KEY, false);
+            registrationId = sharedPreferences.getString(GCM_TOKEN_KEY, null);
             if (sentToken || shouldRefreshToken) {
                 try {
                     JSONObject jsonObject = new JSONObject();
-                    jsonObject.put("registrationId", sharedPreferences.getString(GCM_TOKEN_KEY, null));
+                    jsonObject.put("registrationId", registrationId);
                     jsonObject.put("eventName", "registrationCompleted");
 
                     Log.d(TAG, "sending registration result " + jsonObject.toString() + " to application");

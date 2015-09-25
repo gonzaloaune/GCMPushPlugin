@@ -52,7 +52,7 @@ var GcmPushPlugin = function(options) {
     if (typeof options === 'undefined') {
         throw new Error("GcmPushPluginError", "The options argument is required.");
     }else{
-        // store the options to this object instance
+        //store the options to this object instance
         //valid option are:
         //senderId, mandatory!
         //icon, the path to a local icon for the notification (type string, default empty)
@@ -81,29 +81,27 @@ GcmPushPlugin.prototype.unregister = function () {
 
 /**
  * Subscribe to a topic
- * @param registrationId, The registration id that was optained during registration
  * @param topics, an array of topics that may not be empty
  * @throws an error if not all parameters are provided or the plugin fails during the subscription
  */
-GcmPushPlugin.prototype.subscribeTopics = function (registrationId, topics) {
-    if(!registrationId || !topics || topics[0] == null){
-        throw new Error("GcmPushPluginError", "Please provide the registrationId and at least one topic.")
+GcmPushPlugin.prototype.subscribeTopics = function (topics) {
+    if(!topics || topics[0] == null){
+        throw new Error("GcmPushPluginError", "Please provide at least one topic.")
     }else{
-        exec(this.successCB, this.errorCB, "GCMPushPlugin", "subscribeTopics", [{registrationId: registrationId, topics: topics}]);
+        exec(this.successCB, this.errorCB, "GCMPushPlugin", "subscribeTopics", [{topics: topics}]);
     };
 };
 
 /**
  * Unsubscribe from a topic
- * @param registrationId, The registration id that was optained during registration
  * @param topics, an array of topics that may not be empty
  * @throws an error if not all parameters are provided or the plugin fails during the unsubscription
  */
-GcmPushPlugin.prototype.unsubscribeTopics = function (registrationId, topics) {
-    if(!registrationId || !topics || topics[0] == null){
-        throw new Error("GcmPushPluginError", "Please provide the registrationId and at least one topic.")
+GcmPushPlugin.prototype.unsubscribeTopics = function (topics) {
+    if(!topics || topics[0] == null){
+        throw new Error("GcmPushPluginError", "Please provide at least one topic.")
     }else{
-        exec(this.successCB, this.errorCB, "GCMPushPlugin", "unsubscribeTopics", [{registrationId: registrationId, topics: topics}]);
+        exec(this.successCB, this.errorCB, "GCMPushPlugin", "unsubscribeTopics", [{topics: topics}]);
     };
 };
 

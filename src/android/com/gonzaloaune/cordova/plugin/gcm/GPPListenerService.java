@@ -77,7 +77,7 @@ public class GPPListenerService extends GcmListenerService {
             dataReceivedIntend.putExtra(GCMPushPlugin.getContext().getPackageName() + ".data", bundleExtras);
             LocalBroadcastManager.getInstance(this).sendBroadcast(dataReceivedIntend);
         }else{
-            Log.d(TAG, "not sending a data because the app is in background, but caching the message");
+            Log.d(TAG, "not sending data because the app is in background, but caching the message");
             GCMPushPlugin.addToMessageCache(bundleExtras);
         }
 
