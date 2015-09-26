@@ -24,26 +24,27 @@ public class GPPActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Bundle extras = getIntent().getExtras();
+        Bundle extras = getIntent().getBundleExtra(getApplicationContext().getPackageName() + ".extras");
 
         if (extras != null) {
-            String notificationExtras = extras.getString("extras");
 
-            Intent intent = new Intent(GCMPushPlugin.MSG_RECEIVED_BROADCAST_KEY);
-            intent.putExtra("data", notificationExtras);
+            //What is this good for?
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+            sharedPreferences.edit().putString(GCMPushPlugin.LAST_PUSH_KEY, extras.toString()).commit();
 
-            Log.d(TAG, "Booting GPPActivity with data: "+notificationExtras);
-
-            SharedPreferences sharedPreferences =
-                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-            sharedPreferences.edit().putString(GCMPushPlugin.LAST_PUSH_KEY, notificationExtras).commit();
-
+            Intent intent = new Intent(GCMPushPlugin.NOTIFICATION_CLICKED_BROADCAST_KEY);
+            intent.putExtra(getApplicationContext().getPackageName() + ".data", extras);
             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        }else{
+            Log.d(TAG, "Booting GPPActivity received no extras");
         }
 
         finish();
 
-        forceMainActivityReload();
+        if(!GCMPushPlugin.isActive()){
+            Log.d(TAG, "Booting GPPActivity!");
+            forceMainActivityReload();
+        }
     }
 
     private void forceMainActivityReload() {
