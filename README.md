@@ -111,7 +111,7 @@ pushPlugin.unregister();
 #### Subscribe to a topic
 You may also subscribe to one ore more topics.
 ```
-pushPlugin.subscribeTopics(registrationId, ["topic1", "topic2"]);
+pushPlugin.subscribeTopics(["topic1", "topic2"]);
 ```
 
 #### Unsubscribe from a topic
