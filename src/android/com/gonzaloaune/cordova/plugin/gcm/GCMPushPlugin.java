@@ -32,6 +32,7 @@ public class GCMPushPlugin extends CordovaPlugin {
 
     private static final String REGISTER_GCM = "register";
     private static final String UNREGISTER_GCM = "unregister";
+    private static final String SUBSCRIBE_TOPIC = "subscribeTopics";
 
     public static final String JS_CALLBACK_KEY = "JS_CALLBACK";
     public static final String SENDER_ID_KEY = "SENDER_ID";
@@ -109,6 +110,9 @@ public class GCMPushPlugin extends CordovaPlugin {
                         unregisterGCM();
                     }
                 });
+                return true;
+            }else if (SUBSCRIBE_TOPIC.equals(action)) {
+                callbackContext.error("Action not ready yet.");
                 return true;
             } else {
                 callbackContext.error("Action not Recognized.");
