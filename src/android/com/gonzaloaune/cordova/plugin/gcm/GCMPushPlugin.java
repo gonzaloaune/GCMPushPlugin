@@ -11,7 +11,6 @@ import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.gcm.GcmPubSub;
 import com.google.android.gms.iid.InstanceID;
 
 import org.apache.cordova.CallbackContext;
@@ -33,7 +32,6 @@ public class GCMPushPlugin extends CordovaPlugin {
 
     private static final String REGISTER_GCM = "register";
     private static final String UNREGISTER_GCM = "unregister";
-    private static final String SUBSCRIBE_TOPIC = "subscribeTopics";
 
     public static final String JS_CALLBACK_KEY = "JS_CALLBACK";
     public static final String SENDER_ID_KEY = "SENDER_ID";
@@ -50,8 +48,6 @@ public class GCMPushPlugin extends CordovaPlugin {
 
     private String senderId;
     private String jsCallback;
-    private String topic;
-    private String token;
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -94,7 +90,7 @@ public class GCMPushPlugin extends CordovaPlugin {
                                 PreferenceManager.getDefaultSharedPreferences(cordova.getActivity());
                         final SharedPreferences.Editor edit = sharedPreferences.edit();
                         edit.putString(SENDER_ID_KEY, senderId)
-                                .putString(JS_CALLBACK_KEY, jsCallback).apply();
+                            .putString(JS_CALLBACK_KEY, jsCallback).apply();
 
                         if (checkPlayServices()) {
                             // Start IntentService to register this application with GCM.
@@ -113,16 +109,6 @@ public class GCMPushPlugin extends CordovaPlugin {
                         unregisterGCM();
                     }
                 });
-                return true;
-            }else if (SUBSCRIBE_TOPIC.equals(action)) {
-                topic = args.optJSONObject(0).optString("topic", null);
-                token = args.optJSONObject(0).optString("token", null);
-                if (topic == null || token == null) {
-                    callbackContext.error("You need to provide a token and topic.");
-                    return false;
-                }
-                GcmPubSub pubSub = GcmPubSub.getInstance(cordova.getActivity());
-                pubSub.subscribe(token, "/topics/" + topic, null);
                 return true;
             } else {
                 callbackContext.error("Action not Recognized.");
@@ -152,11 +138,11 @@ public class GCMPushPlugin extends CordovaPlugin {
 
         final SharedPreferences.Editor edit = sharedPreferences.edit();
         edit.remove(SENDER_ID_KEY)
-                .remove(JS_CALLBACK_KEY)
-                .remove(LAST_PUSH_KEY)
-                .remove(SENT_TOKEN_KEY)
-                .remove(REFRESH_TOKEN_KEY)
-                .remove(GCM_TOKEN_KEY).apply();
+            .remove(JS_CALLBACK_KEY)
+            .remove(LAST_PUSH_KEY)
+            .remove(SENT_TOKEN_KEY)
+            .remove(REFRESH_TOKEN_KEY)
+            .remove(GCM_TOKEN_KEY).apply();
     }
 
     @Override
