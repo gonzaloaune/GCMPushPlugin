@@ -24,13 +24,13 @@ var GcmPushPlugin = {
               );
     },
     
-    subscribeTopics: function (successCB, errorCB) {
+    subscribeTopics: function (successCB, errorCB, options) {
         cordova.exec(
                 successCB,
                 errorCB,
                 "GCMPushPlugin",
                 "subscribeTopics",
-                []
+                [options]
               );
     },
     
