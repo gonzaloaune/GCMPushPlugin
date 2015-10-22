@@ -24,16 +24,6 @@ var GcmPushPlugin = {
               );
     },
     
-    subscribeTopics: function (successCB, errorCB, options) {
-        cordova.exec(
-                successCB,
-                errorCB,
-                "GCMPushPlugin",
-                "subscribeTopics",
-                [options]
-              );
-    },
-    
     setApplicationIconBadgeNumber: function (options) {
         cordova.exec(
                 function(resp){},
