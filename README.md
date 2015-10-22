@@ -1,4 +1,4 @@
-# Push Notifications for Cordova
+# Push Notifications for Cordova (Copy)
 
 ## Description
 
