@@ -1,4 +1,4 @@
-# Push Notifications for Cordova (Copy)
+# Push Notifications for Cordova
 
 ## Description
 
@@ -79,6 +79,15 @@ curl --header "Authorization: key=SERVER_API_KEY" \
        --header Content-Type:"application/json" \
        https://gcm-http.googleapis.com/gcm/send \
        -d "{ \"data\" : { \"title\" : \"MyCoolApp\", \"text\" : \"MessageText\", \"extra\":{\"url\":\"someurl.js\"}}, \"to\" : \"$DEVICE_TOKEN\" }"
+```
+
+Or using "notification" standard object, in this case the add-on will take the title and body of the notification from the "notification" object instead of "data" object
+
+```
+curl --header "Authorization: key=SERVER_API_KEY" \
+       --header Content-Type:"application/json" \
+       https://gcm-http.googleapis.com/gcm/send \
+       -d "{ \"notification\" : { \"title\" : \"MyCoolApp\", \"body\" : \"MessageBody\"}, \"data\" : { \"title\" : \"MyCoolApp\", \"text\" : \"MessageText\", \"extra\":{\"url\":\"someurl.js\"}}, \"to\" : \"$DEVICE_TOKEN\" }"
 ```
 
 Then you will receive in your `onNotification` method, the **extra** parameter you pass to GCM in the cURL command:
@@ -333,7 +342,8 @@ window.GcmPushPlugin.unregister({'badge':12});
 - 08/05/2015 Added **Register** method for iOS native
 - 08/05/2015 Added **Unregister** method for iOS native
 - 08/05/2015 Added **setApplicationBadgeNumber** method for iOS native
-
+- 07/12/2015 Added support for send "notification" object in JSON and handle it by Android. and add support for sending color as dynamic attribute in the notification JSON object
+- 
 ##<a name="upcomings"></a> Upcomings
 
 - ~~**Unregister** method for Android~~
