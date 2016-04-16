@@ -77,8 +77,9 @@ public class GPPListenerService extends GcmListenerService {
         }else{
             notificationBody=message.optString("gcm.notification.body");
         }
+        int resourceSmallIconID = getResources().getIdentifier( "ic_stat_name" , "drawable",getPackageName());
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(getApplicationInfo().icon)
+                .setSmallIcon((resourceSmallIconID == 0 ? getApplicationInfo().icon : resourceSmallIconID))
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), getApplicationInfo().icon))
                 .setContentTitle(notificationTitle)
                 .setContentText(notificationBody)
