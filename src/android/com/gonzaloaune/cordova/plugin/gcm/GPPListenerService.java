@@ -4,6 +4,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -20,6 +21,8 @@ import java.util.Set;
 public class GPPListenerService extends GcmListenerService {
 
     private final String TAG = "GPPListenerService";
+    private String notificationTitle = "";
+    private String notificationBody = "";
 
     /**
      * Called when message is received.
@@ -41,7 +44,7 @@ public class GPPListenerService extends GcmListenerService {
             }
         }
 
-        Log.d(TAG, "Sending JSON:"+jsonObject.toString());
+        Log.d(TAG, "Sending JSON:" + jsonObject.toString());
 
         sendNotification(jsonObject);
     }
@@ -60,13 +63,34 @@ public class GPPListenerService extends GcmListenerService {
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+
+        if(message.optString("gcm.notification.title").isEmpty())
+        {
+            notificationTitle=message.optString("title");
+        }else{
+            notificationTitle=message.optString("gcm.notification.title");
+        }
+        if(message.optString("gcm.notification.body").isEmpty())
+        {
+            notificationBody=message.optString("text");
+        }else{
+            notificationBody=message.optString("gcm.notification.body");
+        }
+        int resourceSmallIconID = getResources().getIdentifier( "ic_stat_name" , "drawable",getPackageName());
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(getApplicationInfo().icon)
-                .setContentTitle(message.optString("title"))
-                .setContentText(message.optString("text"))
+                .setSmallIcon((resourceSmallIconID == 0 ? getApplicationInfo().icon : resourceSmallIconID))
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), getApplicationInfo().icon))
+                .setContentTitle(notificationTitle)
+                .setContentText(notificationBody)
                 .setAutoCancel(true)
                 .setSound(defaultSoundUri)
                 .setContentIntent(contentIntent);
+
+        if(!message.optString("gcm.notification.color").isEmpty()){
+            notificationBuilder.setColor(Integer.parseInt(message.optString("gcm.notification.color")));
+        }
+
 
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
